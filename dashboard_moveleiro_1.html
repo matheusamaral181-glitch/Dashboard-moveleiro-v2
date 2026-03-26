@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — Indústria Moveleira | Salvador/LN</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --primary: #0F4C81;
+    --secondary: #10B981;
+    --accent: #EC4899;
+    --bg: #EFF6FF;
+    --bg2: #ffffff;
+    --text: #1F2937;
+    --text2: #6B7280;
+    --border: #BFDBFE;
+    --me: #3B82F6;
+    --epp: #10B981;
+    --shadow: 0 2px 12px rgba(15,76,129,0.08);
+  }
+  body { font-family: 'Poppins', sans-serif; background: linear-gradient(135deg, #EFF6FF 0%, #ffffff 100%); color: var(--text); min-height: 100vh; }
+
+  /* HEADER */
+  .header { background: var(--primary); color: #fff; padding: 18px 32px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 16px rgba(15,76,129,0.3); }
+  .header h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
+  .header p { font-size: 13px; opacity: 0.7; margin-top: 2px; }
+  .btn-export { background: #16A34A; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.2s; }
+  .btn-export:hover { background: #15803D; }
+  .btn-export svg { width: 16px; height: 16px; }
+
+  /* LAYOUT */
+  .layout { display: grid; grid-template-columns: 280px 1fr; gap: 0; min-height: calc(100vh - 70px); }
+
+  /* SIDEBAR */
+  .sidebar { background: var(--bg2); border-right: 1.5px solid var(--border); padding: 24px 20px; overflow-y: auto; }
+  .sidebar-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text2); margin-bottom: 16px; }
+  .filter-group { margin-bottom: 20px; }
+  .filter-label { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 10px; display: block; }
+  .checkbox-item { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 7px; cursor: pointer; transition: background 0.15s; margin-bottom: 3px; }
+  .checkbox-item:hover { background: var(--bg); }
+  .checkbox-item input[type=checkbox] { display: none; }
+  .checkbox-dot { width: 18px; height: 18px; border-radius: 5px; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; }
+  .checkbox-dot svg { width: 11px; height: 11px; stroke: #fff; opacity: 0; transition: opacity 0.15s; }
+  .checkbox-item.checked .checkbox-dot { border-color: transparent; }
+  .checkbox-item.checked .checkbox-dot svg { opacity: 1; }
+  .checkbox-text { font-size: 13px; color: var(--text); }
+  .checkbox-count { margin-left: auto; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--text2); background: var(--bg); padding: 1px 6px; border-radius: 4px; }
+  .divider { height: 1px; background: var(--border); margin: 20px 0; }
+  .search-input { width: 100%; padding: 9px 12px; border: 1.5px solid var(--border); border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 13px; color: var(--text); outline: none; transition: border-color 0.2s; }
+  .search-input:focus { border-color: var(--primary); }
+  .btn-clear { width: 100%; margin-top: 16px; padding: 10px; border: 2px solid var(--border); border-radius: 8px; background: transparent; font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; color: var(--text2); cursor: pointer; transition: all 0.2s; }
+  .btn-clear:hover { border-color: var(--primary); color: var(--primary); }
+
+  /* MAIN */
+  .main { padding: 28px 32px; overflow-y: auto; }
+
+  /* KPI CARDS */
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+  .kpi-card { background: var(--bg2); border-radius: 10px; border: 2px solid var(--border); padding: 20px 20px 16px; box-shadow: var(--shadow); transition: transform 0.15s; }
+  .kpi-card:hover { transform: translateY(-2px); }
+  .kpi-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
+  .kpi-icon { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+  .kpi-icon svg { width: 22px; height: 22px; }
+  .kpi-icon.blue { background: #EFF6FF; color: var(--me); }
+  .kpi-icon.green { background: #ECFDF5; color: var(--epp); }
+  .kpi-label { font-size: 12px; color: var(--text2); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  .kpi-value { font-size: 36px; font-weight: 700; color: var(--text); line-height: 1; }
+  .kpi-value.blue { color: var(--me); }
+  .kpi-value.green { color: var(--epp); }
+
+  /* CHARTS ROW */
+  .charts-row { display: grid; grid-template-columns: 1fr 1fr 1.6fr; gap: 20px; margin-bottom: 28px; }
+  .chart-card { background: var(--bg2); border-radius: 10px; border: 1.5px solid var(--border); padding: 20px; box-shadow: var(--shadow); }
+  .chart-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 16px; }
+  .chart-wrap { position: relative; height: 200px; }
+
+  /* TABLE */
+  .table-card { background: var(--bg2); border-radius: 10px; border: 1.5px solid var(--border); box-shadow: var(--shadow); overflow: hidden; }
+  .table-header { padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1.5px solid var(--border); }
+  .table-title { font-size: 15px; font-weight: 600; color: var(--text); }
+  .table-meta { font-size: 12px; color: var(--text2); }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th { background: var(--bg); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text2); padding: 10px 14px; text-align: left; white-space: nowrap; border-bottom: 1.5px solid var(--border); }
+  tbody tr { border-bottom: 1px solid #F3F4F6; transition: background 0.1s; }
+  tbody tr:hover { background: var(--bg); }
+  tbody td { padding: 11px 14px; font-size: 13px; color: var(--text); }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .badge-me { background: #EFF6FF; color: var(--me); }
+  .badge-epp { background: #ECFDF5; color: var(--epp); }
+  .btn-ver { background: var(--primary); color: #fff; border: none; padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: 'Poppins', sans-serif; transition: background 0.2s; }
+  .btn-ver:hover { background: #0D3F6E; }
+  .mono { font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
+  .td-truncate { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* PAGINATION */
+  .pagination { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-top: 1.5px solid var(--border); }
+  .pag-info { font-size: 13px; color: var(--text2); }
+  .pag-controls { display: flex; gap: 6px; }
+  .pag-btn { padding: 6px 12px; border: 1.5px solid var(--border); border-radius: 7px; background: var(--bg2); font-family: 'Poppins', sans-serif; font-size: 13px; color: var(--text); cursor: pointer; transition: all 0.15s; }
+  .pag-btn:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); }
+  .pag-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .pag-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* MODAL */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(15,76,129,0.35); backdrop-filter: blur(3px); z-index: 1000; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--bg2); border-radius: 14px; width: 620px; max-width: 95vw; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(15,76,129,0.25); }
+  .modal-head { background: var(--primary); color: #fff; padding: 20px 24px; border-radius: 14px 14px 0 0; display: flex; justify-content: space-between; align-items: flex-start; }
+  .modal-head h2 { font-size: 16px; font-weight: 700; line-height: 1.3; }
+  .modal-head p { font-size: 12px; opacity: 0.7; margin-top: 3px; }
+  .modal-close { background: rgba(255,255,255,0.2); border: none; color: #fff; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; transition: background 0.15s; }
+  .modal-close:hover { background: rgba(255,255,255,0.35); }
+  .modal-body { padding: 24px; }
+  .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .modal-field label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text2); display: block; margin-bottom: 4px; }
+  .modal-field span { font-size: 14px; color: var(--text); word-break: break-word; }
+  .modal-section-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--primary); border-bottom: 1.5px solid var(--border); padding-bottom: 8px; margin: 20px 0 14px; grid-column: 1 / -1; }
+
+  /* EMPTY STATE */
+  .empty { padding: 60px 20px; text-align: center; color: var(--text2); }
+  .empty svg { width: 48px; height: 48px; margin-bottom: 12px; opacity: 0.4; }
+  .empty p { font-size: 15px; }
+
+  @media (max-width: 1100px) {
+    .kpis { grid-template-columns: 1fr 1fr; }
+    .charts-row { grid-template-columns: 1fr 1fr; }
+    .charts-row .chart-card:last-child { grid-column: 1 / -1; }
+  }
+  @media (max-width: 768px) {
+    .layout { grid-template-columns: 1fr; }
+    .sidebar { border-right: none; border-bottom: 1.5px solid var(--border); }
+    .kpis { grid-template-columns: 1fr 1fr; }
+    .charts-row { grid-template-columns: 1fr; }
+    .main { padding: 20px 16px; }
+    .header { padding: 14px 20px; }
+    .header h1 { font-size: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div>
+    <h1>🪑 Dashboard — Indústria Moveleira</h1>
+    <p>Região Metropolitana de Salvador · Bahia · CNAE 31 — Fabricação de Móveis</p>
+  </div>
+  <button class="btn-export" onclick="exportCSV()">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    Exportar CSV
+  </button>
+</header>
+
+<div class="layout">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-title">Filtros</div>
+
+    <div class="filter-group">
+      <span class="filter-label">Porte</span>
+      <label class="checkbox-item" data-filter="porte" data-value="MICRO EMPRESA" onclick="toggleFilter(this)">
+        <div class="checkbox-dot" style="background:#EFF6FF;border-color:#BFDBFE">
+          <svg viewBox="0 0 12 12" fill="none" stroke="#3B82F6" stroke-width="2.5"><polyline points="2,6 5,9 10,3"/></svg>
+        </div>
+        <span class="checkbox-text" style="color:#0F4C81;font-weight:600">ME — Micro Empresa</span>
+        <span class="checkbox-count" id="cnt-ME">137</span>
+      </label>
+      <label class="checkbox-item" data-filter="porte" data-value="EMPRESA DE PEQUENO PORTE" onclick="toggleFilter(this)">
+        <div class="checkbox-dot" style="background:#ECFDF5;border-color:#A7F3D0">
+          <svg viewBox="0 0 12 12" fill="none" stroke="#10B981" stroke-width="2.5"><polyline points="2,6 5,9 10,3"/></svg>
+        </div>
+        <span class="checkbox-text" style="color:#059669;font-weight:600">EPP — Pequeno Porte</span>
+        <span class="checkbox-count" id="cnt-EPP">18</span>
+      </label>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="filter-group">
+      <span class="filter-label">Município</span>
+      <label class="checkbox-item" data-filter="municipio" data-value="SALVADOR" onclick="toggleFilter(this)">
+        <div class="checkbox-dot"><svg viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="2.5"><polyline points="2,6 5,9 10,3"/></svg></div>
+        <span class="checkbox-text">Salvador</span>
+        <span class="checkbox-count" id="cnt-SALVADOR">96</span>
+      </label>
+      <label class="checkbox-item" data-filter="municipio" data-value="LAURO DE FREITAS" onclick="toggleFilter(this)">
+        <div class="checkbox-dot"><svg viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="2.5"><polyline points="2,6 5,9 10,3"/></svg></div>
+        <span class="checkbox-text">Lauro de Freitas</span>
+        <span class="checkbox-count" id="cnt-LAURO">44</span>
+      </label>
+      <label class="checkbox-item" data-filter="municipio" data-value="CAMACARI" onclick="toggleFilter(this)">
+        <div class="checkbox-dot"><svg viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="2.5"><polyline points="2,6 5,9 10,3"/></svg></div>
+        <span class="checkbox-text">Camaçari</span>
+        <span class="checkbox-count" id="cnt-CAMACARI">15</span>
+      </label>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="filter-group">
+      <span class="filter-label">CNAE Principal</span>
+      <label class="checkbox-item" data-filter="cnae_chave" data-value="3101200" onclick="toggleFilter(this)">
+        <div class="checkbox-dot"><svg viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="2.5"><polyline points="2,6 5,9 10,3"/></svg></div>
+        <span class="checkbox-text" style="font-size:12px">Madeira (3101-2)</span>
+        <span class="checkbox-count" id="cnt-3101200">141</span>
+      </label>
+      <label class="checkbox-item" data-filter="cnae_chave" data-value="3102100" onclick="toggleFilter(this)">
+        <div class="checkbox-dot"><svg viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="2.5"><polyline points="2,6 5,9 10,3"/></svg></div>
+        <span class="checkbox-text" style="font-size:12px">Metal (3102-1)</span>
+        <span class="checkbox-count" id="cnt-3102100">7</span>
+      </label>
+      <label class="checkbox-item" data-filter="cnae_chave" data-value="3103900" onclick="toggleFilter(this)">
+        <div class="checkbox-dot"><svg viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="2.5"><polyline points="2,6 5,9 10,3"/></svg></div>
+        <span class="checkbox-text" style="font-size:12px">Outros Mat. (3103-9)</span>
+        <span class="checkbox-count" id="cnt-3103900">7</span>
+      </label>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="filter-group">
+      <span class="filter-label">Busca por Nome / CNPJ</span>
+      <input type="text" class="search-input" id="searchInput" placeholder="Digite para buscar..." oninput="applyFilters()">
+    </div>
+
+    <button class="btn-clear" onclick="clearFilters()">✕ Limpar Filtros</button>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main">
+
+    <!-- KPIs -->
+    <div class="kpis">
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <div>
+            <div class="kpi-label">Total Empresas</div>
+            <div class="kpi-value blue" id="kpi-total">155</div>
+          </div>
+          <div class="kpi-icon blue">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          </div>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <div>
+            <div class="kpi-label">Municípios</div>
+            <div class="kpi-value green" id="kpi-mun">3</div>
+          </div>
+          <div class="kpi-icon green">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          </div>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <div>
+            <div class="kpi-label">Micro Empresas</div>
+            <div class="kpi-value blue" id="kpi-me">137</div>
+          </div>
+          <div class="kpi-icon blue">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <div>
+            <div class="kpi-label">Pequeno Porte</div>
+            <div class="kpi-value green" id="kpi-epp">18</div>
+          </div>
+          <div class="kpi-icon green">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHARTS -->
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="chart-title">📊 Distribuição por Porte</div>
+        <div class="chart-wrap"><canvas id="chartPorte"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">🗂️ Tipo de CNAE</div>
+        <div class="chart-wrap"><canvas id="chartCnae"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">🏙️ Empresas por Município</div>
+        <div class="chart-wrap"><canvas id="chartMun"></canvas></div>
+      </div>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-card">
+      <div class="table-header">
+        <div class="table-title">📋 Lista de Empresas</div>
+        <div class="table-meta" id="tableMeta">155 empresas · página 1 de 8</div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Nome Fantasia</th>
+              <th>CNPJ</th>
+              <th>Porte</th>
+              <th>Município</th>
+              <th>CNAE</th>
+              <th>Capital Social</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+        <div id="emptyState" class="empty" style="display:none">
+          <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <p>Nenhuma empresa encontrada para os filtros selecionados.</p>
+        </div>
+      </div>
+      <div class="pagination">
+        <div class="pag-info" id="pagInfo">Mostrando 1–20 de 155</div>
+        <div class="pag-controls" id="pagControls"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <h2 id="modalName">—</h2>
+        <p id="modalRazao">—</p>
+      </div>
+      <button class="modal-close" onclick="closeModalBtn()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-grid" id="modalGrid"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== DATA =====
+const RAW_DATA = [{"nome_fantasia":"IN FOCO DESIGN DE MOVEIS LTDA","razao_social":"IN FOCO DESIGN DE MOVEIS LTDA","cnpj":"17374358000187","porte":"MICRO EMPRESA","municipio":"CAMACARI","uf":"BA","bairro":"ALTO DA CRUZ","email":"NEILSONCONTABILIDADE@IG.COM.BR","telefone":"71   87173760","capital_social":8000000.0,"data_inicio":"2013-01-08","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"SOLLAR MOVEIS","razao_social":"SOLLAR INDUSTRIA E COMERCIO DE MOVEIS ARTESANAL LTDA","cnpj":"00306323000108","porte":"MICRO EMPRESA","municipio":"CAMACARI","uf":"BA","bairro":"MONTE GORDO","email":"GOMIDESOL@HOTMAIL.COM","telefone":"71   99094646","capital_social":2000000.0,"data_inicio":"1994-11-21","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":6},{"nome_fantasia":"BOMOVEIS INDUSTRIA LTDA","razao_social":"BOMOVEIS INDUSTRIA LTDA","cnpj":"05137262000116","porte":"MICRO EMPRESA","municipio":"CAMACARI","uf":"BA","bairro":"AREMBEPE (ABRANTES)","email":"BOMOVEIS2024@GMAIL.COM","telefone":"71   92732691","capital_social":8000000.0,"data_inicio":"2002-05-21","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":16},{"nome_fantasia":"HAJA MOVEIS","razao_social":"HAJA MOVEIS FABRICACAO E SERVICO LTDA","cnpj":"27308198000121","porte":"MICRO EMPRESA","municipio":"CAMACARI","uf":"BA","bairro":"CATU ABRANTES","email":"HAJAMOVEIS2017@GMAIL.COM","telefone":"71   35992148","capital_social":2000000.0,"data_inicio":"2017-03-15","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"ECOVITA MOVEIS DE PALLET","razao_social":"ECOVITA SERVICOS, MOVEIS PLANEJADOS E DECORACAO LTDA","cnpj":"27683983000164","porte":"MICRO EMPRESA","municipio":"CAMACARI","uf":"BA","bairro":"JARDIM BRASILIA","email":"FLAVIOCSANTOS25@HOTMAIL.COM","telefone":"71   91181842","capital_social":7000000.0,"data_inicio":"2017-05-08","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":0},{"nome_fantasia":"CEZLO MOVEIS PLANEJADOS","razao_social":"CEZLO MOVEIS PLANEJADOS LTDA","cnpj":"30500077000191","porte":"MICRO EMPRESA","municipio":"CAMACARI","uf":"BA","bairro":"LOTEAMENTO MONTENEGRO","email":"CEZLOMOVEISPLANEJADOS@GMAIL.COM","telefone":"71   92283518","capital_social":3000000.0,"data_inicio":"2018-05-18","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"PATRICIOS MOVEIS","razao_social":"PATRICIO FABRICACAO E COMERCIO DE MOVEIS PLANEJADOS LTDA","cnpj":"33042336000176","porte":"MICRO EMPRESA","municipio":"CAMACARI","uf":"BA","bairro":"DOM AVELAR","email":"PATRICIOSMOVEIS@HOTMAIL.COM","telefone":"71   36225627","capital_social":10000000.0,"data_inicio":"2019-03-15","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":11},{"nome_fantasia":"MAFERATTI FABRICACAO DE MOVEIS","razao_social":"MAFERATTI FABRICACAO DE MOVEIS LTDA","cnpj":"37304232000143","porte":"MICRO EMPRESA","municipio":"CAMACARI","uf":"BA","bairro":"MONTE GORDO","email":"MAFERATTI@GMAIL.COM","telefone":"71   99056281","capital_social":2000000.0,"data_inicio":"2020-06-02","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"PFES AUTO CENTER & PLANEJADOS","razao_social":"MARCELO LUCAS DOS SANTOS LTDA","cnpj":"40256252000109","porte":"MICRO EMPRESA","municipio":"CAMACARI","uf":"BA","bairro":"CAMACARI DE DENTRO","email":"MAYLA_MOVEIS@HOTMAIL.COM","telefone":"71   30411772","capital_social":10450000.0,"data_inicio":"2021-01-05","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"NOVO ASPECTO PLANEJADOS","razao_social":"NOVO ASPECTO PLANEJADOS LTDA","cnpj":"40432246000157","porte":"MICRO EMPRESA","municipio":"CAMACARI","uf":"BA","bairro":"VILA DE ABRANTES (ABRANTES)","email":"NOVOASPECTOPLANEJADOS@GMAIL.COM","telefone":"71   97188129","capital_social":15000000.0,"data_inicio":"2021-01-18","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"POLO MOVEIS","razao_social":"J&M MARCENARIA LTDA","cnpj":"40482010000125","porte":"MICRO EMPRESA","municipio":"CAMACARI","uf":"BA","bairro":"PARQUE SATELITE","email":"gomescont@hotmail.com","telefone":"71   36215967","capital_social":5000000.0,"data_inicio":"1991-06-14","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":1},{"nome_fantasia":"CARD CRED","razao_social":"44.961.195 LTDA","cnpj":"44961195000101","porte":"MICRO EMPRESA","municipio":"CAMACARI","uf":"BA","bairro":"CENTRO","email":"CARDCREDEMPRESTIMO@GMAIL.COM","telefone":"71   30545671","capital_social":10000000.0,"data_inicio":"2022-01-21","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"REFINATTO AMBIENTTES","razao_social":"MARCENARIA I G PLANEJADOS LTDA","cnpj":"46459920000173","porte":"MICRO EMPRESA","municipio":"CAMACARI","uf":"BA","bairro":"MONTE GORDO","email":"REFINATTO.AMBIENTTES@GMAIL.COM","telefone":"71   97043454","capital_social":12000000.0,"data_inicio":"2022-05-19","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":10},{"nome_fantasia":"UNITE TOUS","razao_social":"UNITE TOUS COMERCIO E SERVICOS ESPECIALIZADOS LTDA","cnpj":"60190120000120","porte":"MICRO EMPRESA","municipio":"CAMACARI","uf":"BA","bairro":"PARQUE REAL SERRA VERDE","email":"FORNECEDOR@UNITETOUS.COM.BR","telefone":"71   41111233","capital_social":4500000.0,"data_inicio":"2025-04-01","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"MSJ - MOVEIS PLANEJADOS E INTELIGENTES","razao_social":"MSJ - MOVEIS PLANEJADOS E INTELIGENTES LTDA","cnpj":"62523502000154","porte":"EMPRESA DE PEQUENO PORTE","municipio":"CAMACARI","uf":"BA","bairro":"PE DE AREIA (ABRANTES)","email":"ADM@MSJPI.COM.BR","telefone":"71   96193377","capital_social":12000000.0,"data_inicio":"2025-09-02","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"ARTFINAL MARCENARIA E COM DE MADEIRAS","razao_social":"ARTFINAL MARCENARIA LTDA","cnpj":"74107020000100","porte":"MICRO EMPRESA","municipio":"LAURO DE FREITAS","uf":"BA","bairro":"ITINGA","email":"","telefone":"","capital_social":0.0,"data_inicio":"1994-01-21","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"ARCANJO GUERREIRO FABRICA E COMERCIO","razao_social":"ARCANJO GUERREIRO FABRICA E COMERCIO LTDA","cnpj":"47646979000133","porte":"MICRO EMPRESA","municipio":"LAURO DE FREITAS","uf":"BA","bairro":"CAJI","email":"TRIBUTARIO@BOMFIMNET.COM","telefone":"71   32518050","capital_social":20000000.0,"data_inicio":"2022-08-19","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"RLB BOX E CABECEIRAS","razao_social":"RLB BOX E CABECEIRAS LTDA","cnpj":"48954347000108","porte":"MICRO EMPRESA","municipio":"LAURO DE FREITAS","uf":"BA","bairro":"CAIXA DAGUA","email":"RLBBOXECABECEIRAS@GMAIL.COM","telefone":"15   81111717","capital_social":40000000.0,"data_inicio":"2022-12-21","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"MARCENARIA MODERNA","razao_social":"GRQ MARCENARIA E INSTALACOES LTDA","cnpj":"49217362000128","porte":"MICRO EMPRESA","municipio":"LAURO DE FREITAS","uf":"BA","bairro":"RECREIO IPITANGA","email":"SIMONE@NASCIMENTOEMPRESARIAL.COM.BR","telefone":"71   99909000","capital_social":20000000.0,"data_inicio":"2023-01-17","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"ULTRABOX INDUSTRIA E COMERCIO LTDA","razao_social":"ULTRABOX INDUSTRIA E COMERCIO LTDA","cnpj":"49721690000167","porte":"MICRO EMPRESA","municipio":"LAURO DE FREITAS","uf":"BA","bairro":"RECREIO IPITANGA","email":"VALDIRENE@PLIMA.COM.BR","telefone":"71   81027273","capital_social":30000000.0,"data_inicio":"2023-02-27","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"BIG INDUSTRIA","razao_social":"BIG INDUSTRIA, DISTRIBUIDORA E COMERCIO DE MADEIRA E MOVEIS LTDA","cnpj":"45089014000161","porte":"MICRO EMPRESA","municipio":"LAURO DE FREITAS","uf":"BA","bairro":"ITINGA","email":"PAGSEG@OUTLOOK.COM.BR","telefone":"71   32515370","capital_social":12000000.0,"data_inicio":"2022-01-31","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":8},{"nome_fantasia":"BOUTIQUE CABECEIRAS & AFINS","razao_social":"GUIBEN CABECEIRAS E MOVEIS ESTOFADOS LTDA","cnpj":"45997779000108","porte":"MICRO EMPRESA","municipio":"LAURO DE FREITAS","uf":"BA","bairro":"ITINGA","email":"NEIDSONCAVALCANTE@HOTMAIL.COM","telefone":"71   88695115","capital_social":4000000.0,"data_inicio":"2022-04-11","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":3},{"nome_fantasia":"MELC MOVEIS","razao_social":"CARPINTARI MOVEIS PLANEJADOS LTDA","cnpj":"59877651000107","porte":"MICRO EMPRESA","municipio":"LAURO DE FREITAS","uf":"BA","bairro":"ITINGA","email":"ADM.MELCMOVEIS@GMAIL.COM","telefone":"71   88787244","capital_social":1000000.0,"data_inicio":"2025-03-13","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"REQUINTE ANDRADE AMBIENTES PLANEJADOS LTDA","razao_social":"REQUINTE ANDRADE AMBIENTES PLANEJADOS LTDA","cnpj":"33329775000164","porte":"MICRO EMPRESA","municipio":"LAURO DE FREITAS","uf":"BA","bairro":"CENTRO","email":"ATIVACONTABILIDADE.BA@GMAIL.COM","telefone":"71   35059606","capital_social":10000000.0,"data_inicio":"2019-04-11","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"MARCENARIA NOC LTDA","razao_social":"MARCENARIA NOC LTDA","cnpj":"41599899000198","porte":"MICRO EMPRESA","municipio":"LAURO DE FREITAS","uf":"BA","bairro":"ITINGA","email":"LUCAS@LIBERPATRIMONII.COM","telefone":"71   86148073","capital_social":1000000.0,"data_inicio":"2021-04-16","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"M. A. MARCENARIA","razao_social":"CERQUEIRA MARCENARIA LTDA","cnpj":"42927718000178","porte":"MICRO EMPRESA","municipio":"LAURO DE FREITAS","uf":"BA","bairro":"RECREIO IPITANGA","email":"MAMARCENARIA@OUTLOOK.COM.BR","telefone":"71   97081710","capital_social":4000000.0,"data_inicio":"2021-07-28","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"RESERVA MFX INDUSTRIA E PLANEJADOS","razao_social":"RESERVA MFX PLANEJADO E INDUSTRIA LTDA","cnpj":"43244222000162","porte":"EMPRESA DE PEQUENO PORTE","municipio":"LAURO DE FREITAS","uf":"BA","bairro":"CENTRO","email":"MFCONTABILIDADE@OUTLOOK.COM.BR","telefone":"71   32872743","capital_social":20000000.0,"data_inicio":"2021-08-23","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"LINHA NOVA MOVEIS","razao_social":"BOA IDEIA INDUSTRIA E COMERCIO DE MOVEIS E MADEIRAS LTDA","cnpj":"40539504000107","porte":"EMPRESA DE PEQUENO PORTE","municipio":"LAURO DE FREITAS","uf":"BA","bairro":"AREIA BRANCA","email":"LINHANOVAMOVEIS@GMAIL.COM","telefone":"71   35080376","capital_social":7000000.0,"data_inicio":"1991-08-08","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"F. A. N. PLANEJADOS","razao_social":"AN MOVEIS PLANEJADOS LTDA","cnpj":"41226456000151","porte":"MICRO EMPRESA","municipio":"LAURO DE FREITAS","uf":"BA","bairro":"CAIXA DAGUA","email":"ADILSONN12009@HOTMAIL.COM","telefone":"71   81091434","capital_social":11000000.0,"data_inicio":"2021-03-15","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"BALOART MOVEIS","razao_social":"LUBALOART PLANEJADOS COMERCIO E INDUSTRIA DE MOVEIS LTDA","cnpj":"34629440000124","porte":"MICRO EMPRESA","municipio":"LAURO DE FREITAS","uf":"BA","bairro":"VIDA NOVA","email":"LUBALOART@HOTMAIL.COM","telefone":"71   96188687","capital_social":9980000.0,"data_inicio":"2019-08-22","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"JPS MARCENARIA PLANEJADA","razao_social":"JPS MARCENARIA PLANEJADA LTDA","cnpj":"37474181000106","porte":"MICRO EMPRESA","municipio":"LAURO DE FREITAS","uf":"BA","bairro":"ITINGA","email":"JOELICIOSANTOS@HOTMAIL.COM","telefone":"71   91049768","capital_social":6000000.0,"data_inicio":"2020-06-20","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"O MOVELEIRO MOVEIS PLANEJADOS","razao_social":"IVANILSON SOUZA MOVEIS PLANEJADOS LTDA","cnpj":"37523296000135","porte":"MICRO EMPRESA","municipio":"LAURO DE FREITAS","uf":"BA","bairro":"CENTRO","email":"NILSONFD06@GMAIL.COM","telefone":"71   83608946","capital_social":3000000.0,"data_inicio":"2020-06-25","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"JF MARCENARIA LTDA","razao_social":"JF MARCENARIA LTDA","cnpj":"37566033000103","porte":"MICRO EMPRESA","municipio":"LAURO DE FREITAS","uf":"BA","bairro":"PORTAO","email":"FERNANDA.ALEXANDRA08@GMAIL.COM","telefone":"71   92787900","capital_social":1000000.0,"data_inicio":"2020-06-30","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"GRUPO ASSUNCAO MADEIREIRA E METAIS","razao_social":"ASSUNCAO MADEIRAS E METAIS LTDA","cnpj":"51091112000136","porte":"MICRO EMPRESA","municipio":"LAURO DE FREITAS","uf":"BA","bairro":"ITINGA","email":"MADEIREIRA@GRUPOASSUNCAO.NET","telefone":"71   33952626","capital_social":60000000.0,"data_inicio":"2023-06-19","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"FIXA","razao_social":"FIXA AMBIENTES PLANEJADOS LTDA","cnpj":"51825562000105","porte":"MICRO EMPRESA","municipio":"LAURO DE FREITAS","uf":"BA","bairro":"CENTRO","email":"FIXAMARCENARIA@GMAIL.COM","telefone":"71   32309309","capital_social":2000000.0,"data_inicio":"2023-08-16","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"CRETA MOVEIS INDUSTRIA PLANEJADOS E SERVICOS LTDA","razao_social":"CRETA MOVEIS INDUSTRIA PLANEJADOS E SERVICOS LTDA","cnpj":"52066500000120","porte":"EMPRESA DE PEQUENO PORTE","municipio":"LAURO DE FREITAS","uf":"BA","bairro":"PITANGUEIRAS","email":"VALEX@OUTLOOK.COM.BR","telefone":"71   32872743","capital_social":50000000.0,"data_inicio":"2023-09-04","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"MOVEISPORTAS","razao_social":"G MOVEIS PLANEJADOS LTDA","cnpj":"32340534000153","porte":"EMPRESA DE PEQUENO PORTE","municipio":"LAURO DE FREITAS","uf":"BA","bairro":"PITANGUEIRAS","email":"MFCONTABILIDADE@OUTLOOK.COM.BR","telefone":"71   32872743","capital_social":20000000.0,"data_inicio":"2019-01-03","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"WDDS MOVEIS PLANEJADOS","razao_social":"WDDS MOVEIS PLANEJADOS LTDA","cnpj":"27094779000108","porte":"MICRO EMPRESA","municipio":"LAURO DE FREITAS","uf":"BA","bairro":"VIDA NOVA","email":"WDDS20@HOTMAIL.COM","telefone":"71   99662918","capital_social":1000000.0,"data_inicio":"2017-02-13","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"FLEX PLANEJADOS","razao_social":"FLEX MOVEIS PLANEJADOS LTDA","cnpj":"33028966000196","porte":"EMPRESA DE PEQUENO PORTE","municipio":"LAURO DE FREITAS","uf":"BA","bairro":"PITANGUEIRAS","email":"MFCONTABILIDADE@OUTLOOK.COM.BR","telefone":"71   99371564","capital_social":20000000.0,"data_inicio":"2019-03-14","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"ARLEN MOVEIS PLANEJADOS","razao_social":"ARLEN MOVEIS PLANEJADOS LTDA","cnpj":"31011568000131","porte":"MICRO EMPRESA","municipio":"LAURO DE FREITAS","uf":"BA","bairro":"PORTAO","email":"ARLENARMARIOS@YAHOO.COM","telefone":"71   87669918","capital_social":8000000.0,"data_inicio":"2018-07-24","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"J BASTOS AMBIENTES","razao_social":"J BASTOS MARCENARIA LTDA","cnpj":"12036295000135","porte":"MICRO EMPRESA","municipio":"LAURO DE FREITAS","uf":"BA","bairro":"CENTRO","email":"JUCK13@HOTMAIL.COM","telefone":"71   30125080","capital_social":8800000.0,"data_inicio":"2010-06-02","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":1},{"nome_fantasia":"MILENART MOVEIS PLANEJADOS","razao_social":"MILENART INDUSTRIA E COMERCIO DE MOVEIS PLANEJADOS LTDA","cnpj":"14028984000123","porte":"MICRO EMPRESA","municipio":"LAURO DE FREITAS","uf":"BA","bairro":"ITINGA","email":"AILTON-MOVEIS@HOTMAIL.COM","telefone":"71   32522045","capital_social":1000000.0,"data_inicio":"2011-07-27","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":0},{"nome_fantasia":"DALMOBILE","razao_social":"R A INDUSTRIA E COMERCIO DE MOVEIS LTDA","cnpj":"18669691000186","porte":"MICRO EMPRESA","municipio":"LAURO DE FREITAS","uf":"BA","bairro":"ITINGA","email":"ALEXANDRE@DALMOBILEBAHIA.COM.BR","telefone":"71   30243062","capital_social":10000000.0,"data_inicio":"2013-08-13","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"AUDACE INDUSTRIA COMERCIO E IMPORTADORA LTDA","razao_social":"AUDACE INDUSTRIA COMERCIO E IMPORTADORA LTDA","cnpj":"20672185000600","porte":"EMPRESA DE PEQUENO PORTE","municipio":"LAURO DE FREITAS","uf":"BA","bairro":"PORTAO","email":"CONTROLADORIA@KIOSKBRANDS.COM","telefone":"81   30714840","capital_social":70000000.0,"data_inicio":"2025-07-07","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"MFX INDUSTRIA E PLANEJADOS","razao_social":"MFX MOVEIS PLANEJADOS LTDA","cnpj":"21773648000170","porte":"EMPRESA DE PEQUENO PORTE","municipio":"LAURO DE FREITAS","uf":"BA","bairro":"CENTRO","email":"MFCONTABILIDADE@OUTLOOK.COM.BR","telefone":"71   32870403","capital_social":30000000.0,"data_inicio":"2015-01-28","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"MD DESIGN","razao_social":"MD DESIGN INDUSTRIA, COMERCIO E SERVICOS LTDA","cnpj":"22037796000190","porte":"MICRO EMPRESA","municipio":"LAURO DE FREITAS","uf":"BA","bairro":"ITINGA","email":"RPMACIEL2010@HOTMAIL.COM","telefone":"71   33422821","capital_social":15000000.0,"data_inicio":"2015-03-12","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"DALMOBILE","razao_social":"2 JA INDUSTRIA E COMERCIO DE MOVEIS LTDA","cnpj":"26287564000140","porte":"MICRO EMPRESA","municipio":"LAURO DE FREITAS","uf":"BA","bairro":"CENTRO","email":"ALEXANDRE@DALMOBILEBAHIA.COM.BR","telefone":"71   30290662","capital_social":5000000.0,"data_inicio":"2016-10-04","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":5},{"nome_fantasia":"MODULARES MOVELARIA","razao_social":"MODULARES MOVELARIA LTDA.","cnpj":"01915827000198","porte":"MICRO EMPRESA","municipio":"LAURO DE FREITAS","uf":"BA","bairro":"QUINGOMA","email":"MODULARESMOVELARIA@GMAIL.COM","telefone":"71   91188457","capital_social":0.0,"data_inicio":"1997-06-16","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":6},{"nome_fantasia":"RACHEL MOVEIS E DECORACOES","razao_social":"RACHEL MOVEIS E DECORACAO LTDA","cnpj":"00069348000135","porte":"EMPRESA DE PEQUENO PORTE","municipio":"LAURO DE FREITAS","uf":"BA","bairro":"PORTAO","email":"RACHELMOVEIS@YMAIL.COM","telefone":"71   33790199","capital_social":8000000.0,"data_inicio":"1994-05-17","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":13},{"nome_fantasia":"PAULO HENRIQUE DA SILVA MOTA LTDA","razao_social":"PAULO HENRIQUE DA SILVA MOTA LTDA","cnpj":"15170998000140","porte":"MICRO EMPRESA","municipio":"LAURO DE FREITAS","uf":"BA","bairro":"PORTAO","email":"fmicontabil@ig.com.br","telefone":"71   30260540","capital_social":6300000.0,"data_inicio":"2012-03-08","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"TRAZZ DESIGN","razao_social":"TRAZZ DESIGN INDUSTRIA DE MOVEIS LTDA","cnpj":"15430315000146","porte":"MICRO EMPRESA","municipio":"LAURO DE FREITAS","uf":"BA","bairro":"CAJI","email":"NETOTAVARESN@HOTMAIL.COM","telefone":"71   93394905","capital_social":10000000.0,"data_inicio":"2012-04-25","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"MILDESIGN MOVEIS PLANEJADOS","razao_social":"MILDESIGN FABRICACAO COMERCIO E MONTAGENS DE MOVEIS LTDA","cnpj":"09151485000199","porte":"MICRO EMPRESA","municipio":"LAURO DE FREITAS","uf":"BA","bairro":"CENTRO","email":"cacauabreu@ig.com.br","telefone":"71   33784393","capital_social":4000000.0,"data_inicio":"2007-10-01","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"LAR DO VIME","razao_social":"LAR DO VIME LTDA","cnpj":"09576896000126","porte":"MICRO EMPRESA","municipio":"LAURO DE FREITAS","uf":"BA","bairro":"PORTAO","email":"MARCEMACEDO@IG.COM.BR","telefone":"71   33691471","capital_social":5000000.0,"data_inicio":"2008-05-06","cnae_principal":"FABRICAÇÃO DE MÓVEIS DE OUTROS MATERIAIS, EXCETO MADEIRA E METAL","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis de outros materiais, exceto madeira e metal","cnae_chave":"3103900","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"CONTRASTE MOVEIS E DECORACOES","razao_social":"CONTRASTE MOVEIS LTDA","cnpj":"02613975000110","porte":"MICRO EMPRESA","municipio":"LAURO DE FREITAS","uf":"BA","bairro":"PORTAO","email":"GESCON@GESCON.CNT.BR","telefone":"71   33783050","capital_social":10000000.0,"data_inicio":"1998-06-18","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":6},{"nome_fantasia":"I&P MARCENARIA","razao_social":"IP MARCENARIA INDUSTRIA E COMERCIO LTDA","cnpj":"02903924000123","porte":"MICRO EMPRESA","municipio":"LAURO DE FREITAS","uf":"BA","bairro":"ITINGA","email":"IP.MOVELARIA@HOTMAIL.COM","telefone":"71   33775111","capital_social":1000000.0,"data_inicio":"1998-12-14","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":8},{"nome_fantasia":"MELC MOVEIS PLANEJADOS","razao_social":"MELC MOVEIS PLANEJADOS LTDA","cnpj":"10744101000120","porte":"MICRO EMPRESA","municipio":"LAURO DE FREITAS","uf":"BA","bairro":"ITINGA","email":"ADM.MELCMOVEIS@GMAIL.COM","telefone":"71   33772247","capital_social":1000000.0,"data_inicio":"2009-04-03","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":16},{"nome_fantasia":"ASSUNCAO MDF E FERRAGENS","razao_social":"RICO INDUSTRIA E COMERCIO DE MOVEIS LTDA","cnpj":"12781101000126","porte":"MICRO EMPRESA","municipio":"LAURO DE FREITAS","uf":"BA","bairro":"ITINGA","email":"assuncaodistribuidora@hotmail.com","telefone":"71   32514017","capital_social":4000000.0,"data_inicio":"2010-10-27","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":13},{"nome_fantasia":"ASSUNCAO MDF E FERRAGENS","razao_social":"RICO INDUSTRIA E COMERCIO DE MOVEIS LTDA","cnpj":"12781101000207","porte":"MICRO EMPRESA","municipio":"LAURO DE FREITAS","uf":"BA","bairro":"ITINGA","email":"ARITELESCONTADOR@HOTMAIL.COM","telefone":"71   32895846","capital_social":4000000.0,"data_inicio":"2011-11-25","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"BELLUNO MOVEIS PLANEJADOS","razao_social":"OLIVEIRA INDUSTRIA E COMERCIO DE MOVEIS LTDA","cnpj":"13240774000131","porte":"MICRO EMPRESA","municipio":"LAURO DE FREITAS","uf":"BA","bairro":"ITINGA","email":"ELIEZEOLIVEIRA@GMAIL.COM","telefone":"71   99408232","capital_social":7880000.0,"data_inicio":"2011-02-11","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":10},{"nome_fantasia":"MOVELARIA JUREMA","razao_social":"BITENCOURT MOVEIS E AMBIENTES PLANEJADOS LTDA.","cnpj":"13485578000127","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"NARANDIBA","email":"BONSMOVEISSA@GMAIL.COM","telefone":"71   34625447","capital_social":10000000.0,"data_inicio":"1984-06-01","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"MASSARANDUBA","razao_social":"CERVINO & CERVINO LTDA","cnpj":"13575597000144","porte":"EMPRESA DE PEQUENO PORTE","municipio":"SALVADOR","uf":"BA","bairro":"MASSARANDUBA","email":"MARCENARIA.MASSARANDUBA@GMAIL.COM","telefone":"71   33124321","capital_social":2000000.0,"data_inicio":"2011-04-29","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"METAL FORMA","razao_social":"METAL FORMA COMUNICACAO VISUAL LTDA","cnpj":"13596694000113","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"CASTELO BRANCO","email":"amorim@vbpa.com.br","telefone":"71   32408538","capital_social":60000000.0,"data_inicio":"2011-05-04","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE METAL","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de metal","cnae_chave":"3102100","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"GERIZIM","razao_social":"GERIZIM SERVICOS DE MARCENARIA E MANUTENCAO LTDA","cnpj":"14022003000130","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"FAZENDA GRANDE DO RETIRO","email":"jadson_262@hotmail.com","telefone":"71   87539382","capital_social":1000000.0,"data_inicio":"2011-07-18","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":3},{"nome_fantasia":"VMB MOVEIS","razao_social":"VMB MOVEIS LTDA","cnpj":"12883352000111","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"URUGUAI","email":"DILEI@DILEI.COM.BR","telefone":"71   33136353","capital_social":1000000.0,"data_inicio":"2010-11-18","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":9},{"nome_fantasia":"ITALBRAS","razao_social":"ITALBRAS INDUSTRIA E COMERCIO DE MOVEIS DE ACO LTDA","cnpj":"13082516000174","porte":"EMPRESA DE PEQUENO PORTE","municipio":"SALVADOR","uf":"BA","bairro":"JARDIM CAJAZEIRA","email":"italbras-ba@italbras-ba.com.br","telefone":"71   40098999","capital_social":120000000.0,"data_inicio":"1982-07-12","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE METAL","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de metal","cnae_chave":"3102100","regiao_fieb":"RMS","qtd_funcionarios":20},{"nome_fantasia":"GM MOVEIS","razao_social":"GM MOVEIS LTDA","cnpj":"13147601000173","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"URUGUAI","email":"COMERCIAL@BOMFIMFERRAZ.COM.BR","telefone":"71   88235382","capital_social":10000000.0,"data_inicio":"2011-01-24","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"CEDRO MARCENARIA","razao_social":"CEDRO MARCENARIA LTDA","cnpj":"10794013000133","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"CAMPINAS DE PIRAJA","email":"CEDROMARCENARIA@YHAOO.COM.BR","telefone":"71   33272326","capital_social":500000.0,"data_inicio":"2008-07-25","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":4},{"nome_fantasia":"ART COURO","razao_social":"ART COURO ARTEFATOS EM COURO LTDA","cnpj":"10905228000184","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"JARDIM DAS MARGARIDAS","email":"TRIBUTARIO@BOMFIMNET.COM","telefone":"71   32518050","capital_social":2000000.0,"data_inicio":"2009-06-16","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":3},{"nome_fantasia":"LTM MOVEIS E DECORACOES LTDA","razao_social":"LTM MOVEIS E DECORACOES LTDA","cnpj":"03938278000100","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"DOM AVELAR","email":"","telefone":"","capital_social":0.0,"data_inicio":"2000-07-18","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE METAL","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de metal","cnae_chave":"3102100","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"LAR DO VIME LTDA - ME","razao_social":"LAR DO VIME LTDA","cnpj":"09576896000207","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"BAIRRO DA PAZ","email":"marcemacedo@ig.com.br","telefone":"71   33691471","capital_social":5000000.0,"data_inicio":"2010-07-06","cnae_principal":"FABRICAÇÃO DE MÓVEIS DE OUTROS MATERIAIS, EXCETO MADEIRA E METAL","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis de outros materiais, exceto madeira e metal","cnae_chave":"3103900","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"ESSE EME","razao_social":"SAN JUST COMERCIO E SERVICOS LTDA","cnpj":"10334291000108","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"AGUAS CLARAS","email":"ESSEEME@UOL.COM.BR","telefone":"71   32156699","capital_social":4000000.0,"data_inicio":"2008-08-29","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":5},{"nome_fantasia":"PARAZZO DESIGN","razao_social":"LYPTUS INDUSTRIA E COMERCIO DE MOVEIS LTDA","cnpj":"10530372000183","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"URUGUAI","email":"marcelo@aficon-ba.com.br","telefone":"71   78112272","capital_social":1000000.0,"data_inicio":"2008-11-07","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"DUDA MOVEIS","razao_social":"DUDA MOVEIS FABRICACAO DE MOVEIS LTDA","cnpj":"10550595000102","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"COMERCIO","email":"ANTONIO.NETO25@HOTMAIL.COM","telefone":"71   30350633","capital_social":11000000.0,"data_inicio":"2008-12-24","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"LR ARMARIOS","razao_social":"LR ARMARIOS COMERCIO VAREJISTA DE MOVEIS PLANEJADOS LTDA","cnpj":"15463348000192","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"SANTA MONICA","email":"lr_armarios@hotmail.com","telefone":"71   33861191","capital_social":5000000.0,"data_inicio":"2012-05-03","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"TROPICAL INDUSTRIA E COMERCIO DE MADEIRAS LTDA","razao_social":"TROPICAL INDUSTRIA E COMERCIO DE MADEIRAS LTDA","cnpj":"15639628000109","porte":"EMPRESA DE PEQUENO PORTE","municipio":"SALVADOR","uf":"BA","bairro":"ITAPUA","email":"TROPICALMADEIRAS81@HOTMAIL.COM","telefone":"71   33792010","capital_social":6500000.0,"data_inicio":"1981-10-23","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":18},{"nome_fantasia":"MADEIRADOS - INDUSTRIA E COMERCIO LTDA","razao_social":"MADEIRADOS - INDUSTRIA E COMERCIO LTDA","cnpj":"16562881000174","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"GRANJAS RURAIS PRESIDENTE VARGAS","email":"processos.officecon@gmail.com","telefone":"71   34520511","capital_social":20000000.0,"data_inicio":"2012-07-23","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"GERCLESLEY ARMARIOS","razao_social":"GERCLESLEY ARMARIOS LTDA","cnpj":"16572863000173","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"VALE DOS LAGOS","email":"gerclesley@hotmail.com","telefone":"71   91377096","capital_social":2000000.0,"data_inicio":"2012-07-24","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":1},{"nome_fantasia":"MARCENARIA M FERREIRA LTDA","razao_social":"MARCENARIA M FERREIRA LTDA","cnpj":"14453163000134","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"PITUACU","email":"VIVACONTSALVADOR@GMAIL.COM","telefone":"71   91230012","capital_social":25000000.0,"data_inicio":"2011-10-11","cnae_principal":"FABRICAÇÃO DE MÓVEIS DE OUTROS MATERIAIS, EXCETO MADEIRA E METAL","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis de outros materiais, exceto madeira e metal","cnae_chave":"3103900","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"TELAMIX","razao_social":"TELAMIX INDUSTRIA E COMERCIO LTDA","cnpj":"14849236000101","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"SAO CISTOVAO","email":"ATENDIMENTO@TELAMIX.COM.BR","telefone":"71   33772256","capital_social":8000000.0,"data_inicio":"1986-06-05","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE METAL","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de metal","cnae_chave":"3102100","regiao_fieb":"RMS","qtd_funcionarios":10},{"nome_fantasia":"MARDELI MOVEIS","razao_social":"MARDELI COMERCIO E SERVICOS LTDA","cnpj":"14893817000140","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"SANTO ANTONIO ALEM DO CARMO","email":"j.fernandomamede@yhoo.com.br","telefone":"71   32431188","capital_social":1500000.0,"data_inicio":"2011-11-29","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":1},{"nome_fantasia":"PACHECO MOVEIS","razao_social":"PACHECO FLEX INDUSTRIA COMERCIO E REPRESENTACOES DE MOVEIS LTDA","cnpj":"02303278000163","porte":"EMPRESA DE PEQUENO PORTE","municipio":"SALVADOR","uf":"BA","bairro":"IAPI","email":"CAIROCONTABILIDADE@OUTLOOK.COM","telefone":"71   99835098","capital_social":1000000.0,"data_inicio":"1997-12-23","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":18},{"nome_fantasia":"ARMAPLAN INDUSTRIA E COMERCIO DE MOVEIS LTDA","razao_social":"ARMAPLAN INDUSTRIA E COMERCIO DE MOVEIS LTDA","cnpj":"00750367000122","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"STIEP","email":"ARMAPLAN@TERRA.COM.BR","telefone":"0071 03426876","capital_social":0.0,"data_inicio":"1995-08-03","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"DISTAK MOVEIS & METAIS","razao_social":"DISTAK MOVEIS E METAIS INDUSTRIA E COMERCIO LTDA","cnpj":"00970972000109","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"PERNAMBUES","email":"DISTAKMOVEISPLANEJADOS@GMAIL.COM","telefone":"71   99597546","capital_social":25000000.0,"data_inicio":"1995-12-18","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"PARAZZO","razao_social":"PARAZZO MATERIAIS PARA MARCENARIA LTDA","cnpj":"05951811000191","porte":"EMPRESA DE PEQUENO PORTE","municipio":"SALVADOR","uf":"BA","bairro":"URUGUAI","email":"","telefone":"","capital_social":1000000.0,"data_inicio":"2003-10-09","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"BILHARES E MARCENARIA J. SILVA","razao_social":"J.S. INDUSTRIA, COMERCIO E SERVICOS DE ARTIGOS EM MADEIRAS LTDA","cnpj":"07398672000146","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"CAJAZEIRAS","email":"","telefone":"","capital_social":0.0,"data_inicio":"2005-03-17","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":5},{"nome_fantasia":"RECICLAR","razao_social":"RECICLAR COMERCIO DE RECICLAVEIS LTDA","cnpj":"07651445000180","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"BOCA DA MATA DE VALERIA","email":"CONTAGILIZE.BA@GMAIL.COM","telefone":"71   96251392","capital_social":12120000.0,"data_inicio":"2005-09-09","cnae_principal":"FABRICAÇÃO DE MÓVEIS DE OUTROS MATERIAIS, EXCETO MADEIRA E METAL","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis de outros materiais, exceto madeira e metal","cnae_chave":"3103900","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"MUNIZ DESIGN E MARCENARIA LTDA","razao_social":"MUNIZ DESIGN E MARCENARIA LTDA","cnpj":"26658874000124","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"MATATU","email":"CONTATO.WS@NTWCONTABILIDADE.COM.BR","telefone":"71   92153731","capital_social":2500000.0,"data_inicio":"2016-12-05","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"M&A SURPERFICIES E MOVEIS","razao_social":"M&A SUPERFICIES E MOVEIS LTDA","cnpj":"26937707000112","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"BOCA DO RIO","email":"AJ@IG.COM.BR","telefone":"71   33342881","capital_social":20000000.0,"data_inicio":"2017-01-24","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"DETALHE PERSONALI'T","razao_social":"MOVEIS PERSONALI T LTDA","cnpj":"26958423000102","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"AGUAS CLARAS","email":"LOURDESBRITOWA@HOTMAIL.COM","telefone":"71   30342855","capital_social":11000000.0,"data_inicio":"2017-01-26","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"PROJECT HOME","razao_social":"PROJECT HOME MOVEIS PLANEJADOS LTDA","cnpj":"22537180000188","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"BROTAS","email":"CONTATO@CEO-CONTABILIDADE.COM","telefone":"71   81240175","capital_social":8000000.0,"data_inicio":"2015-05-27","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"D JOTA","razao_social":"D JOTA INDUSTRIA DE COLCHOES LTDA","cnpj":"23646426000112","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"MASSARANDUBA","email":"MIRALVO.ASSIS@HOTMAIL.COM","telefone":"71   30157078","capital_social":2000000.0,"data_inicio":"2015-11-11","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"ALPHA E OMEGA MOVEIS PLANEJADOS E SERVICOS LIMITADA","razao_social":"ALPHA E OMEGA MOVEIS PLANEJADOS E SERVICOS LIMITADA","cnpj":"24266229000130","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"PITUBA","email":"MARIAESTHERALVESLINS44@GMAIL.COM","telefone":"71   91048335","capital_social":6500000.0,"data_inicio":"2016-02-27","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"DANIELA PACHECO AVILA LTDA","razao_social":"DANIELA PACHECO AVILA LTDA","cnpj":"20970371000103","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"URUGUAI","email":"EXACTOMOVELARIA@GMAIL.COM","telefone":"71   33452608","capital_social":13000000.0,"data_inicio":"2014-09-03","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"PROJETTA MOVEIS","razao_social":"VM INDUSTRIA DE MOVEIS LTDA","cnpj":"19396903000161","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"SANTA MONICA","email":"JORMACK_70@HOTMAIL.COM","telefone":"71   81231921","capital_social":2000000.0,"data_inicio":"2013-12-11","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"ASSIS MOVEIS PLANEJADOS","razao_social":"ASSIS MOVEIS PLANEJADOS LTDA","cnpj":"20472248000162","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"CHAPADA DO RIO VERMELHO","email":"AILTON.MDFASSIS@GMAIL.COM","telefone":"71   81695050","capital_social":2000000.0,"data_inicio":"2014-06-19","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"EMPORIO DECOR","razao_social":"DL SILVA LTDA","cnpj":"14263665000100","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"PELOURINHO","email":"APCADM@APCPLAN.COM.BR","telefone":"71   32413927","capital_social":3000000.0,"data_inicio":"2011-09-08","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":5},{"nome_fantasia":"MOVEIS PLANEJADO E ESTILO","razao_social":"ESTILO MOVEIS PLANEJADOS LTDA","cnpj":"12751263000111","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"COMERCIO","email":"WELDON.ALCANTARA@HOTMAIL.COM","telefone":"71   33914818","capital_social":500000.0,"data_inicio":"2010-10-26","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"MARCENARIA ANJOS MOVEIS PLANEJADOS","razao_social":"ANJOS MOVEIS PLANEJADOS LTDA","cnpj":"31942028000171","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"MARECHAL RONDON","email":"EDUARDASANTOS_94@HOTMAIL.COM","telefone":"71   32397255","capital_social":4500000.0,"data_inicio":"2018-11-05","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"GMAD FABRICACAO MOVEIS E COMERCIO LTDA","razao_social":"GMAD FABRICACAO MOVEIS E COMERCIO LTDA","cnpj":"30726843000130","porte":"EMPRESA DE PEQUENO PORTE","municipio":"SALVADOR","uf":"BA","bairro":"IAPI","email":"GCON.SELMA@UOL.COM.BR","telefone":"71   91680250","capital_social":9980000.0,"data_inicio":"2018-06-18","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"INOVAR INDUSTRIA COMERCIO DE PLASTICOS","razao_social":"INOVAR COMERCIO DE PLASTICOS LTDA","cnpj":"28157777000183","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"BOCA DA MATA DE VALERIA","email":"CONTAGILIZE.BA@GMAIL.COM","telefone":"71   96251392","capital_social":11000000.0,"data_inicio":"2017-07-11","cnae_principal":"FABRICAÇÃO DE MÓVEIS DE OUTROS MATERIAIS, EXCETO MADEIRA E METAL","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis de outros materiais, exceto madeira e metal","cnae_chave":"3103900","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"HOME MODELLA","razao_social":"HOME MODELLA LTDA","cnpj":"28166144000131","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"CAJAZEIRAS V","email":"CONTATO@HOMEMODELLA.COM.BR","telefone":"71   87970712","capital_social":10000000.0,"data_inicio":"2017-07-12","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"JTY SOLUCOES","razao_social":"JTY SOLUCOES LTDA","cnpj":"29066444000101","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"ALTO DA TEREZINHA","email":"FINANCEIRO@JTYSOLUCOES.COM.BR","telefone":"71   82708258","capital_social":10000000.0,"data_inicio":"2017-11-13","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"MV PLANEJADOS","razao_social":"MV PLANEJADOS COMERCIO VAREJISTA DE MOVEIS LTDA","cnpj":"29145261000181","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"NARANDIBA","email":"ROSACARLENE@EMPREENDERCONSULTORIA.COM","telefone":"71   82660840","capital_social":10000000.0,"data_inicio":"2017-11-25","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"MADEIREIRA EDY MARQUES","razao_social":"MADEIREIRA EDY MARQUES LTDA","cnpj":"30080439000132","porte":"EMPRESA DE PEQUENO PORTE","municipio":"SALVADOR","uf":"BA","bairro":"VALERIA","email":"CMVCONTABILIDADE@GMAIL.COM","telefone":"71   91311279","capital_social":2500000.0,"data_inicio":"2018-04-02","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"LA MOVEIS","razao_social":"LA SERVICOS DE MONTAGEM DE MOVEIS LTDA","cnpj":"32462256000107","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"GRANJAS RURAIS PRESIDENTE VARGAS","email":"NILLTONAZEVEDO@GMAIL.COM","telefone":"71   30379713","capital_social":15000000.0,"data_inicio":"2019-01-16","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"PERFECTUS PLANEJADOS LTDA","razao_social":"PERFECTUS PLANEJADOS LTDA","cnpj":"32864918000175","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"CASSANGE","email":"ciceroandress@hotmail.com","telefone":"71   32518577","capital_social":5000000.0,"data_inicio":"2019-02-22","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"MOVEIS DESIGN PLANEJADO LTDA","razao_social":"MOVEIS DESIGN PLANEJADO LTDA","cnpj":"33125290000159","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"BOCA DO RIO","email":"MOVEISDESIGNPLANEJADO@GMAIL.COM","telefone":"71   98751666","capital_social":3000000.0,"data_inicio":"2019-03-24","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"DIAISSON E C&A","razao_social":"DIAISSON & CIA MARCENARIA LTDA","cnpj":"33134929000162","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"DOM AVELAR","email":"GARRIDO.CAU@GMAIL.COM","telefone":"71   87965372","capital_social":1000000.0,"data_inicio":"2019-03-25","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"PARKIET BRASIL","razao_social":"BAHIA MOSAICOS INDUSTRIA E COMERCIO DE ARTEFATOS DE MADEIRAS LTDA","cnpj":"33270013000130","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"DOM AVELAR","email":"C.LAURO@APOIOACT.COM.BR","telefone":"71   32184108","capital_social":1000000.0,"data_inicio":"2019-04-05","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"RC DESIGN EM MADEIRA","razao_social":"RC DESIGN EM MADEIRA LTDA","cnpj":"52318445000118","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"MUSSURUNGA","email":"CONASICT@HOTMAIL.COM","telefone":"75   36316986","capital_social":2000000.0,"data_inicio":"2023-09-26","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"ONE DESIGN","razao_social":"ONE DESIGN PLANEJADOS LTDA","cnpj":"52496497000184","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"CAMINHO DAS ARVORES","email":"ONEHOMEDESIGN_PLANEJADOS@HOTMAIL.COM","telefone":"71   99781966","capital_social":5000000.0,"data_inicio":"2023-10-10","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"COMAFER","razao_social":"COMAFER INDUSTRIA E COMERCIO DE MOVEIS LTDA","cnpj":"53742087000139","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"MARECHAL RONDON","email":"COMAFER.SALVADOR@GMAIL.COM","telefone":"71   87076199","capital_social":10000000.0,"data_inicio":"2024-01-31","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"MAIA MOVEIS PLANEJADOS","razao_social":"M2 INDUSTRIA MOVELEIRA E FERRAGENS LTDA","cnpj":"53758917000116","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"LUIS ANSELMO","email":"CLEBER09MAIA@GMAIL.COM","telefone":"71   41012924","capital_social":30000000.0,"data_inicio":"2024-02-01","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"NDESIGN","razao_social":"NDESIGN MOVEIS PLANEJADOS E VIDRO LTDA","cnpj":"53963900000109","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"CAMINHO DAS ARVORES","email":"NDESIGN.OFICIAL@GMAIL.COM","telefone":"71   84047983","capital_social":1000000.0,"data_inicio":"2024-02-19","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"CAH MOVEIS PLANEJADOS","razao_social":"CAH MOVEIS PLANEJADOS LTDA","cnpj":"56223648000181","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"CENTRO","email":"CAHMOVEISPLANEJADOS@GMAIL.COM","telefone":"71   91211734","capital_social":20000000.0,"data_inicio":"2024-08-02","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"DJ MOVEIS","razao_social":"DJ MOVEIS INDUSTRIAIS PLANEJADOS E SERVICOS LTDA","cnpj":"56226003000100","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"CENTRO","email":"DJMOVEISINDUSTRIAIS@HOTMAIL.COM","telefone":"71   91310610","capital_social":50000000.0,"data_inicio":"2024-08-02","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"LFC MOVEIS","razao_social":"LFC MOVEIS PLANEJADOS LTDA","cnpj":"56228288000100","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"CENTRO","email":"LFCMOVEIS@HOTMAIL.COM","telefone":"71   91181363","capital_social":20000000.0,"data_inicio":"2024-08-02","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"ASP ARMARIOS SOB MEDIDAS E SERVICOS","razao_social":"ASP ARMARIOS SOB MEDIDAS E SERVICOS LTDA","cnpj":"57489113000110","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"BAIXA DOS SAPATEIROS","email":"ANDRELUIZSBS9@GMAIL.COM","telefone":"71   88016598","capital_social":15000000.0,"data_inicio":"2024-09-30","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"AZIMUTE MULTISERVICOS LTDA","razao_social":"AZIMUTE MULTISERVICOS LTDA","cnpj":"57817039000113","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"SAO CRISTOVAO","email":"TROPICALOCULOS@GMAIL.COM","telefone":"71   99835246","capital_social":10000000.0,"data_inicio":"2024-10-23","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"F & E MARCENARIA","razao_social":"FABIANA DOS SANTOS ARAUJO LTDA","cnpj":"58353837000102","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"NARANDIBA","email":"ALBERTOJFCONTABIL@GMAIL.COM","telefone":"71   88233316","capital_social":18000000.0,"data_inicio":"2024-12-05","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"NERY MADEIREIRA","razao_social":"L. S MADEIREIRA LTDA","cnpj":"58608590000110","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"CAMPINAS DE PIRAJA","email":"PROCURADORIA.ABERTURA@GMAIL.COM","telefone":"71   82036811","capital_social":30000000.0,"data_inicio":"2025-01-03","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"VARANDA INDUSTRIA E COMERCIO DE MOVEIS E SERVICOS LTDA","razao_social":"VARANDA INDUSTRIA E COMERCIO DE MOVEIS E SERVICOS LTDA","cnpj":"59359060000148","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"MORADAS DA LAGOA","email":"FATURAMENTO@TIDELLI.COM.BR","telefone":"71   96110183","capital_social":50000000.0,"data_inicio":"2025-02-07","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE METAL","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de metal","cnae_chave":"3102100","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"A R EMPREENDIMENTOS","razao_social":"ARAGAO E OLIVEIRA LTDA","cnpj":"59568917000130","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"VILA LAURA","email":"KARRANOLIVEIRA@HOTMAIL.COM","telefone":"71   87801303","capital_social":10000000.0,"data_inicio":"2025-02-20","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"JACARANDA","razao_social":"JACARANDA MOVEIS PLANEJADOS LTDA","cnpj":"37984602000130","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"ARRAIAL DO RETIRO","email":"JACARANDAMOVEISPLANEJADOS@YAHOO.COM","telefone":"71   30000000","capital_social":3000000.0,"data_inicio":"2020-08-05","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":2},{"nome_fantasia":"SERIM CASA PRONTA","razao_social":"SERIM E CASA PRONTA CONSTRUCAO , REFORMA E MOVEIS PLANEJADOS LTDA","cnpj":"38272637000100","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"SANTA MONICA","email":"RESANESOLUCOES@GMAIL.COM","telefone":"71   92251649","capital_social":5000000.0,"data_inicio":"2020-08-29","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"RD MOVEIS PLANEJADOS LTDA","razao_social":"RD MOVEIS PLANEJADOS LTDA","cnpj":"39143040000128","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"BROTAS","email":"GCONT12@GMAIL.COM","telefone":"71   99766980","capital_social":5000000.0,"data_inicio":"2020-09-27","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"CLOSET AMBIENT","razao_social":"CLOSET AMBIENT MOVEIS PLANEJADOS LTDA","cnpj":"39267407000115","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"SAO CRISTOVAO","email":"CONTABILIDADE3AAA@GMAIL.COM","telefone":"71   86152076","capital_social":12000000.0,"data_inicio":"2020-10-01","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"MADEIREIRA FLAMBOYANTS","razao_social":"D'PORTELA MOVEIS LTDA","cnpj":"39306112000100","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"ITAPUA","email":"JOSEMILTON@JMECONTABILIDADE.COM.BR","telefone":"71   88767987","capital_social":2000000.0,"data_inicio":"2020-10-05","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":2},{"nome_fantasia":"CAIGIL","razao_social":"CAIGIL FABRICACAO DE MOVEIS E CONSTRUCOES LTDA","cnpj":"34670586000113","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"PORTO SECO PIRAJA","email":"PETRUSCONT@GMAIL.COM","telefone":"71   86159613","capital_social":1000000.0,"data_inicio":"2019-08-27","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"VIME BRASIL","razao_social":"JLC INDUSTRIA DE MOVEIS LTDA","cnpj":"34675760000110","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"BAIRRO DA PAZ","email":"ELIOVITORIO@HOTMAIL.COM","telefone":"71   32408073","capital_social":10000000.0,"data_inicio":"2019-08-27","cnae_principal":"FABRICAÇÃO DE MÓVEIS DE OUTROS MATERIAIS, EXCETO MADEIRA E METAL","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis de outros materiais, exceto madeira e metal","cnae_chave":"3103900","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"REY DAS CABECEIRAS","razao_social":"REY DAS CABECEIRAS COMERCIO LTDA","cnpj":"34880008000101","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"AMARALINA","email":"REYDASCABECEIRAS01@GMAIL.COM","telefone":"71   86464727","capital_social":2000000.0,"data_inicio":"2019-09-16","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"CORTENARE","razao_social":"CORTENARE MOVEIS PLANEJADOS LTDA","cnpj":"34902160000148","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"SAO RAFAEL","email":"DLIRIOMOVEIS@HOTMAIL.COM","telefone":"71   92290483","capital_social":60000000.0,"data_inicio":"2019-09-17","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"MARCIA MARCENARIA","razao_social":"SORELLI MOVEIS PERSONALIZADOS LTDA","cnpj":"35226144000145","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"CAMPINAS DE BROTAS","email":"MARCIAMARCENARIA@HOTMAIL.COM","telefone":"71   99046746","capital_social":1000000.0,"data_inicio":"2019-10-17","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"AJUZT PLANEJADOS","razao_social":"AJUZT COMERCIO DE MOVEIS PLANEJADOS LTDA","cnpj":"35502232000122","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"PITUACU","email":"AJUZTPLANEJADOS@GMAIL.COM","telefone":"71   99235975","capital_social":3500000.0,"data_inicio":"2019-11-12","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"BALI MOVEIS PLANEJADOS E RUSTICOS","razao_social":"BALI MOVEIS PLANEJADOS LTDA","cnpj":"41396915000145","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"BOCA DO RIO","email":"BALIMOVEISPLANEJADOS@GMAIL.COM","telefone":"71   88772886","capital_social":1000000.0,"data_inicio":"2021-03-30","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":4},{"nome_fantasia":"MEGAFLEX","razao_social":"MEGAFLEX INDUSTRIA, COMERCIO E SERVICOS DE MOVEIS LTDA","cnpj":"43269361000140","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"VALERIA","email":"MEGAFLEX51@GMAIL.COM","telefone":"71   86297556","capital_social":11000000.0,"data_inicio":"2021-08-24","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"JORGE PEREIRA MAIA CONFECCOES MOVEIS E SERVICOS LIMITADA","razao_social":"JORGE PEREIRA MAIA CONFECCOES MOVEIS E SERVICOS LIMITADA","cnpj":"43797544000139","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"ITAPUA","email":"JMSERVICOS11@GMAIL.COM","telefone":"71   33753225","capital_social":5000000.0,"data_inicio":"2021-10-06","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"DALMOBILE","razao_social":"JVG COMERCIO DE MOVEIS LTDA","cnpj":"44827880000140","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"CAMINHO DAS ARVORES","email":"VALDIR@DALMOBILEBAHIA.COM.BR","telefone":"71   94070138","capital_social":50000000.0,"data_inicio":"2022-01-11","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"JVG MOVEIS PLANEJADOS","razao_social":"JVG COMERCIO DE MOVEIS LTDA","cnpj":"44827880000220","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"CAMINHO DAS ARVORES","email":"JOSE.VALDIR@EVVIVABAHIA.COM.BR","telefone":"71   94070138","capital_social":50000000.0,"data_inicio":"2024-02-08","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"ITALO MOVEIS","razao_social":"ITALO DELANEY DE OLIVEIRA MARQUES LTDA","cnpj":"33357973000131","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"FAZENDA COUTOS","email":"NOVOS.RUMOS@UOL.COM.BR","telefone":"71   33545381","capital_social":10000000.0,"data_inicio":"2019-04-15","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"VERTRAU PRODUTOS METALURGICOS LTDA","razao_social":"VERTRAU PRODUTOS METALURGICOS LTDA","cnpj":"34538014000185","porte":"EMPRESA DE PEQUENO PORTE","municipio":"SALVADOR","uf":"BA","bairro":"GRANJAS RURAIS PRESIDENTE VARGAS","email":"FINANCEIRO@VERTRAU.COM.BR","telefone":"71   33813455","capital_social":15000000.0,"data_inicio":"2019-08-14","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE METAL","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de metal","cnae_chave":"3102100","regiao_fieb":"RMS","qtd_funcionarios":17},{"nome_fantasia":"CREATION CENOGRAFIA","razao_social":"V2 ESTRUTURAS E PROMOCOES LTDA","cnpj":"45088080000117","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"PIRAJA","email":"VICTOR@CREATION.ART.BR","telefone":"71   99770868","capital_social":3000000.0,"data_inicio":"2022-01-31","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"QUALITY MARCENARIA MOVEIS PLANEJADOS","razao_social":"QUALITY MARCENARIA MOVEIS PLANEJADOS LTDA","cnpj":"45547044000174","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"CANABRAVA","email":"QUALITYMARCENARIA@HOTMAIL.COM","telefone":"71   87288672","capital_social":5000000.0,"data_inicio":"2022-03-07","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":5},{"nome_fantasia":"PRIMA ATELIE LTDA","razao_social":"PRIMA ATELIE LTDA","cnpj":"45922964000125","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"BOCA DA MATA DE VALERIA","email":"PRIMA.ATELIE@HOTMAIL.COM","telefone":"71   94137482","capital_social":6000000.0,"data_inicio":"2022-04-06","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE METAL","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de metal","cnae_chave":"3102100","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"ADVAN MOVEIS PLANEJADOS E CONSTRUCAO CIVIL","razao_social":"50.564.167 LTDA","cnpj":"50564167000153","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"ITAPUÃ","email":"LUIZAANA1076@GMAIL.COM","telefone":"71   87412586","capital_social":5000000.0,"data_inicio":"2023-05-05","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"IDEIA MOVEIS PLANEJADOS LTDA","razao_social":"IDEIA MOVEIS PLANEJADOS LTDA","cnpj":"50948821000122","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"CANABRAVA","email":"BASTOSVITOR000@GMAIL.COM","telefone":"71   91063164","capital_social":25000000.0,"data_inicio":"2023-06-05","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"RESFRIAR","razao_social":"DERMINOX INDUSTRIA E COMERCIO DE MOVEIS LTDA","cnpj":"96804950000148","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"CEASA","email":"RESFRIAR@IG.COM.BR","telefone":"71   33995846","capital_social":2000000.0,"data_inicio":"1993-07-07","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":10},{"nome_fantasia":"GREEN MOVEIS","razao_social":"GREEN MOVEIS PLANEJADOS E MARCENARIA LTDA","cnpj":"97552113000131","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"BOCA DO RIO","email":"MARCIO@GREENMOVEIS.COM","telefone":"71   30222993","capital_social":2000000.0,"data_inicio":"2011-07-14","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":17},{"nome_fantasia":"S&H COMPANY","razao_social":"S&H COMPANY LTDA","cnpj":"62836066000173","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"BOCA DA MATA DE VALERIA","email":"ASSESSORIA@EMPREENDERCONSULTORIA.COM","telefone":"71   96251392","capital_social":50000000.0,"data_inicio":"2025-09-22","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"TOPGRAO COMERCIO DE RECICLAGEM LTDA","razao_social":"TOPGRAO COMERCIO DE RECICLAGEM LTDA","cnpj":"60581134000175","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"VALERIA","email":"ASSESSORIA@EMPREENDERCONSULTORIA.COM","telefone":"71   32421152","capital_social":15000000.0,"data_inicio":"2025-04-28","cnae_principal":"FABRICAÇÃO DE MÓVEIS DE OUTROS MATERIAIS, EXCETO MADEIRA E METAL","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis de outros materiais, exceto madeira e metal","cnae_chave":"3103900","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"MARCENARIA TRANCOSO","razao_social":"MARCENARIA E MADEIREIRA TRANCOSO LTDA","cnpj":"60836163000130","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"PITUBA","email":"MARCENARIATRANCOSO@GMAIL.COM","telefone":"71   82763536","capital_social":10000000.0,"data_inicio":"2025-05-15","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"VIINI MOVEIS PLANEJADOS","razao_social":"VIINI MOVEIS PLANEJADOS LTDA","cnpj":"61342466000160","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"PIRAJÁ","email":"VINIMOVEISPLANEJADOS@GMAIL.COM","telefone":"71   91211734","capital_social":30000000.0,"data_inicio":"2025-06-17","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"BELLA SPAZIO INDUSTRIA E COMERCIO DE MOVEIS PLANEJADOS","razao_social":"BELLA SPAZIO INDUSTRIA E COMERCIO DE MOVEIS PLANEJADOS LTDA","cnpj":"61478226000197","porte":"EMPRESA DE PEQUENO PORTE","municipio":"SALVADOR","uf":"BA","bairro":"NOVA BRASILIA DE VALERIA","email":"EFILHO.JS@OUTLOOK.COM","telefone":"71   99265326","capital_social":12000000.0,"data_inicio":"2025-06-27","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"DISK COLCHOES","razao_social":"DJ INDUSTRIA E COMERCIO DE MOVEIS LTDA","cnpj":"62097413000193","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"MASSARANDUBA","email":"SILVIO.PEREIRA@RENNOVAASSESSORIA.COM","telefone":"71   92626869","capital_social":1000000.0,"data_inicio":"2025-08-06","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null},{"nome_fantasia":"NERY MADEIREIRA","razao_social":"NASCIMENTO MADEIREIRA LTDA","cnpj":"62298282000102","porte":"MICRO EMPRESA","municipio":"SALVADOR","uf":"BA","bairro":"CAMPINAS DE PIRAJA","email":"MADEIREIRAEFERRAGENSBR101@HOTMAIL.COM","telefone":"71   82036811","capital_social":30000000.0,"data_inicio":"2025-08-19","cnae_principal":"FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA","cnae_divisao":"FABRICAÇÃO DE MÓVEIS","cnae_subclasse":"Fabricação de móveis com predominância de madeira","cnae_chave":"3101200","regiao_fieb":"RMS","qtd_funcionarios":null}]
+;
+
+// ===== STATE =====
+let filters = { porte: [], municipio: [], cnae_chave: [] };
+let searchTerm = '';
+let currentPage = 1;
+const PER_PAGE = 20;
+
+let chartPorte, chartCnae, chartMun;
+
+// ===== FILTER LOGIC =====
+function normalize(s) {
+  return String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim();
+}
+
+function getFiltered() {
+  return RAW_DATA.filter(d => {
+    if (filters.porte.length && !filters.porte.includes(d.porte)) return false;
+    if (filters.municipio.length && !filters.municipio.includes(d.municipio)) return false;
+    if (filters.cnae_chave.length && !filters.cnae_chave.includes(d.cnae_chave)) return false;
+    if (searchTerm) {
+      const q = normalize(searchTerm);
+      const name = normalize(d.nome_fantasia + ' ' + d.razao_social);
+      const cnpj = d.cnpj.replace(/\D/g,'');
+      if (!name.includes(q) && !cnpj.includes(searchTerm.replace(/\D/g,''))) return false;
+    }
+    return true;
+  });
+}
+
+function toggleFilter(el) {
+  const f = el.dataset.filter, v = el.dataset.value;
+  const idx = filters[f].indexOf(v);
+  if (idx > -1) { filters[f].splice(idx, 1); el.classList.remove('checked'); }
+  else { filters[f].push(v); el.classList.add('checked'); }
+  // Style the dot
+  const dot = el.querySelector('.checkbox-dot');
+  if (el.classList.contains('checked')) {
+    if (f === 'porte' && v === 'MICRO EMPRESA') { dot.style.background='#3B82F6'; dot.style.borderColor='#3B82F6'; }
+    else if (f === 'porte') { dot.style.background='#10B981'; dot.style.borderColor='#10B981'; }
+    else { dot.style.background='#0F4C81'; dot.style.borderColor='#0F4C81'; }
+  } else {
+    if (f === 'porte' && v === 'MICRO EMPRESA') { dot.style.background='#EFF6FF'; dot.style.borderColor='#BFDBFE'; }
+    else if (f === 'porte') { dot.style.background='#ECFDF5'; dot.style.borderColor='#A7F3D0'; }
+    else { dot.style.background=''; dot.style.borderColor='#BFDBFE'; }
+  }
+  applyFilters();
+}
+
+function applyFilters() {
+  searchTerm = document.getElementById('searchInput').value;
+  currentPage = 1;
+  const filtered = getFiltered();
+  updateKPIs(filtered);
+  updateCharts(filtered);
+  renderTable(filtered);
+}
+
+function clearFilters() {
+  filters = { porte: [], municipio: [], cnae_chave: [] };
+  searchTerm = '';
+  document.getElementById('searchInput').value = '';
+  document.querySelectorAll('.checkbox-item').forEach(el => {
+    el.classList.remove('checked');
+    const dot = el.querySelector('.checkbox-dot');
+    const f = el.dataset.filter, v = el.dataset.value;
+    if (f === 'porte' && v === 'MICRO EMPRESA') { dot.style.background='#EFF6FF'; dot.style.borderColor='#BFDBFE'; }
+    else if (f === 'porte') { dot.style.background='#ECFDF5'; dot.style.borderColor='#A7F3D0'; }
+    else { dot.style.background=''; dot.style.borderColor='#BFDBFE'; }
+  });
+  applyFilters();
+}
+
+// ===== KPIS =====
+function updateKPIs(data) {
+  document.getElementById('kpi-total').textContent = data.length;
+  const muns = new Set(data.map(d => d.municipio));
+  document.getElementById('kpi-mun').textContent = muns.size;
+  document.getElementById('kpi-me').textContent = data.filter(d => d.porte === 'MICRO EMPRESA').length;
+  document.getElementById('kpi-epp').textContent = data.filter(d => d.porte === 'EMPRESA DE PEQUENO PORTE').length;
+  // Update sidebar counts
+  const cntME = RAW_DATA.filter(d => (filters.municipio.length ? filters.municipio.includes(d.municipio) : true) && (filters.cnae_chave.length ? filters.cnae_chave.includes(d.cnae_chave) : true) && (searchTerm ? normalize(d.nome_fantasia+' '+d.razao_social).includes(normalize(searchTerm)) || d.cnpj.includes(searchTerm.replace(/\D/g,'')) : true) && d.porte === 'MICRO EMPRESA').length;
+  const cntEPP = RAW_DATA.filter(d => (filters.municipio.length ? filters.municipio.includes(d.municipio) : true) && (filters.cnae_chave.length ? filters.cnae_chave.includes(d.cnae_chave) : true) && (searchTerm ? normalize(d.nome_fantasia+' '+d.razao_social).includes(normalize(searchTerm)) || d.cnpj.includes(searchTerm.replace(/\D/g,'')) : true) && d.porte === 'EMPRESA DE PEQUENO PORTE').length;
+  if(document.getElementById('cnt-ME')) document.getElementById('cnt-ME').textContent = cntME;
+  if(document.getElementById('cnt-EPP')) document.getElementById('cnt-EPP').textContent = cntEPP;
+  ['SALVADOR','LAURO DE FREITAS','CAMACARI'].forEach(mun => {
+    const idMap = {'SALVADOR':'cnt-SALVADOR','LAURO DE FREITAS':'cnt-LAURO','CAMACARI':'cnt-CAMACARI'};
+    const el = document.getElementById(idMap[mun]);
+    if(el) el.textContent = RAW_DATA.filter(d => (filters.porte.length ? filters.porte.includes(d.porte) : true) && (filters.cnae_chave.length ? filters.cnae_chave.includes(d.cnae_chave) : true) && d.municipio === mun).length;
+  });
+  [['3101200','cnt-3101200'],['3102100','cnt-3102100'],['3103900','cnt-3103900']].forEach(([chave,id]) => {
+    const el = document.getElementById(id);
+    if(el) el.textContent = RAW_DATA.filter(d => (filters.porte.length ? filters.porte.includes(d.porte) : true) && (filters.municipio.length ? filters.municipio.includes(d.municipio) : true) && d.cnae_chave === chave).length;
+  });
+}
+
+// ===== CHARTS =====
+function updateCharts(data) {
+  // Porte
+  const meCount = data.filter(d => d.porte === 'MICRO EMPRESA').length;
+  const eppCount = data.filter(d => d.porte === 'EMPRESA DE PEQUENO PORTE').length;
+  chartPorte.data.datasets[0].data = [meCount, eppCount];
+  chartPorte.data.labels = [`ME (${meCount})`, `EPP (${eppCount})`];
+  chartPorte.update();
+
+  // CNAE
+  const cnaeMap = {};
+  const cnaeShortNames = {
+    'FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA': 'Madeira (3101-2)',
+    'FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE METAL': 'Metal (3102-1)',
+    'FABRICAÇÃO DE MÓVEIS DE OUTROS MATERIAIS, EXCETO MADEIRA E METAL': 'Outros Mat. (3103-9)'
+  };
+  data.forEach(d => {
+    const k = cnaeShortNames[d.cnae_principal] || (d.cnae_principal.length > 35 ? d.cnae_principal.substring(0,35)+'…' : d.cnae_principal);
+    cnaeMap[k] = (cnaeMap[k]||0) + 1;
+  });
+  const cnaeKeys = Object.keys(cnaeMap), cnaeVals = Object.values(cnaeMap);
+  chartCnae.data.labels = cnaeKeys.map((k,i) => `${k} (${cnaeVals[i]})`);
+  chartCnae.data.datasets[0].data = cnaeVals;
+  chartCnae.update();
+
+  // Município
+  const munMap = {};
+  data.forEach(d => { munMap[d.municipio] = (munMap[d.municipio]||0)+1; });
+  const munEntries = Object.entries(munMap).sort((a,b)=>b[1]-a[1]);
+  chartMun.data.labels = munEntries.map(([k,v])=> k.charAt(0)+k.slice(1).toLowerCase());
+  chartMun.data.datasets[0].data = munEntries.map(([,v])=>v);
+  chartMun.update();
+}
+
+// ===== TABLE =====
+function fmtCNPJ(c) {
+  c = String(c).padStart(14,'0');
+  return c.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,'$1.$2.$3/$4-$5');
+}
+function fmtCapital(v) {
+  if (!v) return '—';
+  return 'R$ ' + (v/1000).toLocaleString('pt-BR',{maximumFractionDigits:0}) + ' mil';
+}
+
+function renderTable(data) {
+  const total = data.length;
+  const pages = Math.ceil(total / PER_PAGE) || 1;
+  const start = (currentPage - 1) * PER_PAGE;
+  const slice = data.slice(start, start + PER_PAGE);
+
+  const tbody = document.getElementById('tableBody');
+  const empty = document.getElementById('emptyState');
+
+  if (!slice.length) {
+    tbody.innerHTML = '';
+    empty.style.display = '';
+  } else {
+    empty.style.display = 'none';
+    tbody.innerHTML = slice.map((d,i) => `
+      <tr>
+        <td class="td-truncate" title="${d.nome_fantasia}">${d.nome_fantasia}</td>
+        <td class="mono">${fmtCNPJ(d.cnpj)}</td>
+        <td><span class="badge ${d.porte==='MICRO EMPRESA'?'badge-me':'badge-epp'}">${d.porte==='MICRO EMPRESA'?'ME':'EPP'}</span></td>
+        <td>${d.municipio.charAt(0)+d.municipio.slice(1).toLowerCase()}</td>
+        <td class="td-truncate" title="${d.cnae_principal}" style="max-width:140px;font-size:12px">${d.cnae_divisao}</td>
+        <td class="mono">${fmtCapital(d.capital_social)}</td>
+        <td><button class="btn-ver" onclick="openModal(${start+i}, filteredData)">Ver</button></td>
+      </tr>`).join('');
+  }
+
+  document.getElementById('tableMeta').textContent = `${total} empresa${total!==1?'s':''} · página ${currentPage} de ${pages}`;
+  document.getElementById('pagInfo').textContent = total ? `Mostrando ${start+1}–${Math.min(start+PER_PAGE,total)} de ${total}` : 'Nenhum resultado';
+
+  // Store reference for modal
+  window.filteredData = data;
+
+  // Pagination buttons
+  const ctrl = document.getElementById('pagControls');
+  ctrl.innerHTML = '';
+  const btn = (label, page, active, disabled) => {
+    const b = document.createElement('button');
+    b.className = 'pag-btn' + (active?' active':'');
+    b.textContent = label;
+    b.disabled = !!disabled;
+    b.onclick = () => { currentPage = page; renderTable(data); };
+    return b;
+  };
+  ctrl.appendChild(btn('‹', currentPage-1, false, currentPage===1));
+  const maxBtns = 5;
+  let s = Math.max(1, currentPage - Math.floor(maxBtns/2));
+  let e = Math.min(pages, s + maxBtns - 1);
+  if (e - s < maxBtns - 1) s = Math.max(1, e - maxBtns + 1);
+  for (let p = s; p <= e; p++) ctrl.appendChild(btn(p, p, p===currentPage));
+  ctrl.appendChild(btn('›', currentPage+1, false, currentPage===pages));
+}
+
+// ===== MODAL =====
+function openModal(idx, data) {
+  const d = data[idx];
+  document.getElementById('modalName').textContent = d.nome_fantasia;
+  document.getElementById('modalRazao').textContent = d.razao_social;
+  const grid = document.getElementById('modalGrid');
+  const field = (label, val) => `<div class="modal-field"><label>${label}</label><span>${val||'—'}</span></div>`;
+  const section = (title) => `<div class="modal-section-title">${title}</div>`;
+  grid.innerHTML = `
+    ${section('📍 Identificação')}
+    ${field('CNPJ', fmtCNPJ(d.cnpj))}
+    ${field('Porte', `<span class="badge ${d.porte==='MICRO EMPRESA'?'badge-me':'badge-epp'}">${d.porte}</span>`)}
+    ${field('Data de Abertura', d.data_inicio ? new Date(d.data_inicio+'T00:00:00').toLocaleDateString('pt-BR') : '—')}
+    ${field('Qtd. Funcionários', d.qtd_funcionarios !== null ? d.qtd_funcionarios : '—')}
+    ${section('📍 Endereço')}
+    ${field('Município / UF', `${d.municipio.charAt(0)+d.municipio.slice(1).toLowerCase()} / ${d.uf}`)}
+    ${field('Bairro', d.bairro || '—')}
+    ${field('Região FIEB', d.regiao_fieb)}
+    ${section('📞 Contato')}
+    ${field('E-mail', d.email ? `<a href="mailto:${d.email}" style="color:#0F4C81">${d.email}</a>` : '—')}
+    ${field('Telefone', d.telefone || '—')}
+    ${section('🏭 Atividade Econômica')}
+    ${field('CNAE Principal', d.cnae_principal)}
+    ${field('CNAE Sub Classe', d.cnae_subclasse)}
+    ${field('CNAE Divisão', d.cnae_divisao)}
+    ${field('Chave CNAE', d.cnae_chave)}
+    ${section('💰 Financeiro')}
+    ${field('Capital Social', d.capital_social ? 'R$ ' + d.capital_social.toLocaleString('pt-BR',{minimumFractionDigits:2}) : '—')}
+  `;
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function closeModal(e) { if (e.target.id==='modalOverlay') closeModalBtn(); }
+function closeModalBtn() { document.getElementById('modalOverlay').classList.remove('open'); }
+
+// ===== EXPORT =====
+function exportCSV() {
+  const data = getFiltered();
+  const cols = ['Nome Fantasia','Razão Social','CNPJ','Porte','Município','UF','Bairro','Email','Telefone','Capital Social','Data Abertura','CNAE Principal','CNAE Divisão','CNAE Sub Classe','Chave CNAE','Qtd Funcionários'];
+  const rows = data.map(d => [
+    d.nome_fantasia, d.razao_social, fmtCNPJ(d.cnpj), d.porte,
+    d.municipio, d.uf, d.bairro, d.email, d.telefone,
+    d.capital_social, d.data_inicio, d.cnae_principal,
+    d.cnae_divisao, d.cnae_subclasse, d.cnae_chave, d.qtd_funcionarios
+  ].map(v => `"${String(v||'').replace(/"/g,'""')}"`));
+  const csv = [cols.join(','), ...rows.map(r => r.join(','))].join('\n');
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url;
+  a.download = `empresas_moveleiras_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+}
+
+// ===== INIT CHARTS =====
+function initCharts() {
+  const opts = { responsive: true, maintainAspectRatio: false, plugins: { legend: { position:'bottom', labels:{ font:{family:'Poppins',size:11}, boxWidth:12, padding:10 } } } };
+
+  chartPorte = new Chart(document.getElementById('chartPorte').getContext('2d'), {
+    type: 'doughnut',
+    data: { labels: ['ME (137)', 'EPP (18)'], datasets:[{ data:[137,18], backgroundColor:['#3B82F6','#10B981'], borderWidth:0, hoverOffset:4 }] },
+    options: { ...opts, cutout:'60%' }
+  });
+
+  chartCnae = new Chart(document.getElementById('chartCnae').getContext('2d'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Madeira (141)', 'Metal (7)', 'Outros (7)'],
+      datasets:[{ data:[141,7,7], backgroundColor:['#0F4C81','#6366F1','#EC4899'], borderWidth:0, hoverOffset:4 }]
+    },
+    options: { ...opts, cutout:'60%' }
+  });
+
+  chartMun = new Chart(document.getElementById('chartMun').getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: ['Salvador','Lauro de Freitas','Camaçari'],
+      datasets:[{ data:[96,44,15], backgroundColor:'#0F4C81', borderRadius:6, borderSkipped:false }]
+    },
+    options: {
+      ...opts,
+      plugins: { legend:{display:false} },
+      scales: {
+        y: { beginAtZero:true, grid:{color:'#F3F4F6'}, ticks:{font:{family:'IBM Plex Mono',size:11}} },
+        x: { grid:{display:false}, ticks:{font:{family:'Poppins',size:12}} }
+      },
+      onClick: (e, els) => {
+        if (!els.length) return;
+        const idx = els[0].index;
+        const munsOrder = ['SALVADOR','LAURO DE FREITAS','CAMACARI'];
+        const mun = munsOrder[idx];
+        const existing = filters.municipio.indexOf(mun);
+        const el = document.querySelector(`[data-filter="municipio"][data-value="${mun}"]`);
+        if (el) toggleFilter(el);
+      }
+    }
+  });
+}
+
+// ===== BOOTSTRAP =====
+document.addEventListener('DOMContentLoaded', () => {
+  initCharts();
+  applyFilters();
+});
+</script>
+</body>
+</html>
